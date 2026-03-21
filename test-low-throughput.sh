@@ -1,4 +1,4 @@
-# test-all-metrics.sh
+# test-low-throughput.sh
 #!/bin/bash
 
 echo "========================================="
