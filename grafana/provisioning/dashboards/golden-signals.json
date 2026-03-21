@@ -1,7 +1,7 @@
 {
   "title": "Golden Signals - Order Service",
-  "uid": "golden-signals",
-  "tags": ["golden-signals", "order-service"],
+  "uid": "golden-signals-v2",
+  "tags": ["golden-signals", "order-service", "monitoring"],
   "timezone": "browser",
   "schemaVersion": 16,
   "version": 1,
@@ -10,65 +10,54 @@
     {
       "id": 1,
       "title": "📊 1. LATÊNCIA (P50, P95, P99)",
-      "type": "graph",
+      "type": "timeseries",
       "gridPos": {"h": 10, "w": 24, "x": 0, "y": 0},
-      "description": "Tempo de resposta das requisições - quanto menor, melhor",
+      "description": "Tempo de resposta das requisições - Quanto menor, melhor",
       "targets": [
         {
-          "expr": "histogram_quantile(0.50, sum(rate(order_create_duration_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
           "legendFormat": "P50 (Mediana)",
-          "refId": "A",
-          "hide": false
+          "refId": "A"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(order_create_duration_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
           "legendFormat": "P95 (95% das requisições)",
-          "refId": "B",
-          "hide": false
+          "refId": "B"
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(order_create_duration_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
           "legendFormat": "P99 (99% das requisições)",
-          "refId": "C",
-          "hide": false
+          "refId": "C"
         },
         {
-          "expr": "rate(order_create_duration_sum[5m]) / rate(order_create_duration_count[5m])",
+          "expr": "rate(http_request_duration_seconds_sum[5m]) / rate(http_request_duration_seconds_count[5m])",
           "legendFormat": "Média",
-          "refId": "D",
-          "hide": false
+          "refId": "D"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "ms",
-          "decimals": 0,
+          "unit": "s",
+          "decimals": 3,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {"color": "green", "value": null},
-              {"color": "yellow", "value": 500},
-              {"color": "red", "value": 1000}
+              {"color": "yellow", "value": 0.5},
+              {"color": "red", "value": 1}
             ]
           }
         }
       },
-      "alert": {
-        "alertRuleTags": {},
-        "conditions": [
-          {
-            "evaluator": {"params": [1000], "type": "gt"},
-            "operator": {"type": "and"},
-            "query": {"params": ["B", "5m", "now"]},
-            "reducer": {"params": [], "type": "avg"},
-            "type": "query"
-          }
-        ],
-        "frequency": "1m",
-        "for": "5m",
-        "name": "Latência alta",
-        "noDataState": "ok",
-        "notifications": []
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "last"],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       }
     },
     {
@@ -84,12 +73,12 @@
           "refId": "A"
         },
         {
-          "expr": "rate(http_requests_success[1m])",
+          "expr": "rate(http_requests_success_total[1m])",
           "legendFormat": "Requisições Bem Sucedidas",
           "refId": "B"
         },
         {
-          "expr": "rate(http_requests_error[1m])",
+          "expr": "rate(http_requests_error_total[1m])",
           "legendFormat": "Requisições com Erro",
           "refId": "C"
         }
@@ -104,12 +93,13 @@
     {
       "id": 3,
       "title": "❌ 3. TAXA DE ERRO (%)",
-      "type": "stat",
+      "type": "timeseries",
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 10},
       "description": "Percentual de requisições com erro",
       "targets": [
         {
-          "expr": "sum(rate(http_requests_error[5m])) / sum(rate(http_requests_total[5m])) * 100",
+          "expr": "(http_requests_error_total / http_requests_total) * 100",
+          "legendFormat": "Taxa de Erro",
           "refId": "A"
         }
       ],
@@ -117,6 +107,8 @@
         "defaults": {
           "unit": "percent",
           "decimals": 2,
+          "min": 0,
+          "max": 100,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -124,13 +116,17 @@
               {"color": "yellow", "value": 1},
               {"color": "red", "value": 5}
             ]
-          },
-          "mappings": [
-            {"type": "value", "value": "0", "text": "0% - Excelente"},
-            {"type": "range", "from": 0, "to": 1, "text": "Bom"},
-            {"type": "range", "from": 1, "to": 5, "text": "Atenção"},
-            {"type": "range", "from": 5, "to": 100, "text": "Crítico"}
-          ]
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "calcs": ["last", "mean", "max"],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
         }
       }
     },
@@ -139,11 +135,11 @@
       "title": "⚙️ 4. SATURAÇÃO - CPU",
       "type": "graph",
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 18},
-      "description": "Uso de CPU do sistema",
+      "description": "Uso de CPU do processo",
       "targets": [
         {
           "expr": "rate(process_cpu_usage[1m]) * 100",
-          "legendFormat": "Uso de CPU (%)",
+          "legendFormat": "CPU do Processo (%)",
           "refId": "A"
         },
         {
@@ -169,26 +165,25 @@
     },
     {
       "id": 5,
-      "title": "⚙️ 4. SATURAÇÃO - MEMÓRIA (HEAP)",
+      "title": "⚙️ 5. SATURAÇÃO - MEMÓRIA",
       "type": "graph",
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 18},
       "description": "Uso de memória heap da JVM",
       "targets": [
         {
-          "expr": "jvm_memory_used_bytes{area='heap'} / 1024 / 1024",
+          "expr": "jvm_memory_used_bytes{area='heap'} / 1048576",
           "legendFormat": "Heap Usado (MB)",
           "refId": "A"
         },
         {
-          "expr": "jvm_memory_max_bytes{area='heap'} / 1024 / 1024",
+          "expr": "jvm_memory_max_bytes{area='heap'} / 1048576",
           "legendFormat": "Heap Máximo (MB)",
           "refId": "B"
         },
         {
           "expr": "(jvm_memory_used_bytes{area='heap'} / jvm_memory_max_bytes{area='heap'}) * 100",
           "legendFormat": "Taxa de Uso (%)",
-          "refId": "C",
-          "hide": false
+          "refId": "C"
         }
       ],
       "fieldConfig": {
@@ -206,39 +201,31 @@
     },
     {
       "id": 6,
-      "title": "⚙️ 4. SATURAÇÃO - CONEXÕES ATIVAS",
+      "title": "⚙️ 6. SATURAÇÃO - CONEXÕES",
       "type": "graph",
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 26},
-      "description": "Número de conexões ativas no banco de dados",
+      "description": "Conexões ativas no banco e requisições simultâneas",
       "targets": [
         {
           "expr": "hikaricp_connections_active",
-          "legendFormat": "Conexões Ativas",
+          "legendFormat": "Conexões DB Ativas",
           "refId": "A"
-        },
-        {
-          "expr": "hikaricp_connections_max",
-          "legendFormat": "Máximo de Conexões",
-          "refId": "B"
         },
         {
           "expr": "http_requests_active",
           "legendFormat": "Requisições Ativas",
+          "refId": "B"
+        },
+        {
+          "expr": "jvm_threads_live_threads",
+          "legendFormat": "Threads Ativas",
           "refId": "C"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "decimals": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {"color": "green", "value": null},
-              {"color": "yellow", "value": 8},
-              {"color": "red", "value": 9}
-            ]
-          }
+          "decimals": 0
         }
       }
     },
@@ -247,12 +234,27 @@
       "title": "📊 RESUMO DAS GOLDEN SIGNALS",
       "type": "stat",
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 26},
-      "description": "Status geral do sistema baseado nas 4 Golden Signals",
+      "description": "Status atual do sistema",
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(order_create_duration_bucket[5m])) by (le))",
-          "legendFormat": "Latência P95",
+          "expr": "(http_requests_error_total / http_requests_total) * 100",
+          "legendFormat": "Taxa de Erro",
           "refId": "A"
+        },
+        {
+          "expr": "rate(http_requests_total[1m])",
+          "legendFormat": "Tráfego (req/s)",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "Latência P95",
+          "refId": "C"
+        },
+        {
+          "expr": "rate(process_cpu_usage[1m]) * 100",
+          "legendFormat": "CPU %",
+          "refId": "D"
         }
       ],
       "options": {
@@ -260,28 +262,14 @@
           "values": false,
           "calcs": ["last"]
         },
-        "text": {},
         "colorMode": "value",
         "graphMode": "none",
         "justifyMode": "auto"
       }
     }
   ],
-  "templating": {
-    "list": [
-      {
-        "name": "time_range",
-        "type": "interval",
-        "auto": true,
-        "auto_min": "1m",
-        "options": [
-          {"text": "Últimos 5 min", "value": "5m"},
-          {"text": "Últimos 15 min", "value": "15m"},
-          {"text": "Últimos 30 min", "value": "30m"},
-          {"text": "Última hora", "value": "1h"},
-          {"text": "Últimas 24h", "value": "24h"}
-        ]
-      }
-    ]
+  "time": {
+    "from": "now-5m",
+    "to": "now"
   }
 }
