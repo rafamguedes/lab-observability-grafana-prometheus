@@ -1,0 +1,287 @@
+{
+  "title": "Golden Signals - Order Service",
+  "uid": "golden-signals",
+  "tags": ["golden-signals", "order-service"],
+  "timezone": "browser",
+  "schemaVersion": 16,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "📊 1. LATÊNCIA (P50, P95, P99)",
+      "type": "graph",
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 0},
+      "description": "Tempo de resposta das requisições - quanto menor, melhor",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(order_create_duration_bucket[5m])) by (le))",
+          "legendFormat": "P50 (Mediana)",
+          "refId": "A",
+          "hide": false
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(order_create_duration_bucket[5m])) by (le))",
+          "legendFormat": "P95 (95% das requisições)",
+          "refId": "B",
+          "hide": false
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(order_create_duration_bucket[5m])) by (le))",
+          "legendFormat": "P99 (99% das requisições)",
+          "refId": "C",
+          "hide": false
+        },
+        {
+          "expr": "rate(order_create_duration_sum[5m]) / rate(order_create_duration_count[5m])",
+          "legendFormat": "Média",
+          "refId": "D",
+          "hide": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 500},
+              {"color": "red", "value": 1000}
+            ]
+          }
+        }
+      },
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {"params": [1000], "type": "gt"},
+            "operator": {"type": "and"},
+            "query": {"params": ["B", "5m", "now"]},
+            "reducer": {"params": [], "type": "avg"},
+            "type": "query"
+          }
+        ],
+        "frequency": "1m",
+        "for": "5m",
+        "name": "Latência alta",
+        "noDataState": "ok",
+        "notifications": []
+      }
+    },
+    {
+      "id": 2,
+      "title": "📈 2. TRÁFEGO (Requests por Segundo)",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 10},
+      "description": "Volume de requisições por segundo",
+      "targets": [
+        {
+          "expr": "rate(http_requests_total[1m])",
+          "legendFormat": "Total de Requisições",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(http_requests_success[1m])",
+          "legendFormat": "Requisições Bem Sucedidas",
+          "refId": "B"
+        },
+        {
+          "expr": "rate(http_requests_error[1m])",
+          "legendFormat": "Requisições com Erro",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "decimals": 1
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "❌ 3. TAXA DE ERRO (%)",
+      "type": "stat",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 10},
+      "description": "Percentual de requisições com erro",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_error[5m])) / sum(rate(http_requests_total[5m])) * 100",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 1},
+              {"color": "red", "value": 5}
+            ]
+          },
+          "mappings": [
+            {"type": "value", "value": "0", "text": "0% - Excelente"},
+            {"type": "range", "from": 0, "to": 1, "text": "Bom"},
+            {"type": "range", "from": 1, "to": 5, "text": "Atenção"},
+            {"type": "range", "from": 5, "to": 100, "text": "Crítico"}
+          ]
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "⚙️ 4. SATURAÇÃO - CPU",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 18},
+      "description": "Uso de CPU do sistema",
+      "targets": [
+        {
+          "expr": "rate(process_cpu_usage[1m]) * 100",
+          "legendFormat": "Uso de CPU (%)",
+          "refId": "A"
+        },
+        {
+          "expr": "system_cpu_usage * 100",
+          "legendFormat": "CPU do Sistema (%)",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 70},
+              {"color": "red", "value": 85}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "⚙️ 4. SATURAÇÃO - MEMÓRIA (HEAP)",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 18},
+      "description": "Uso de memória heap da JVM",
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{area='heap'} / 1024 / 1024",
+          "legendFormat": "Heap Usado (MB)",
+          "refId": "A"
+        },
+        {
+          "expr": "jvm_memory_max_bytes{area='heap'} / 1024 / 1024",
+          "legendFormat": "Heap Máximo (MB)",
+          "refId": "B"
+        },
+        {
+          "expr": "(jvm_memory_used_bytes{area='heap'} / jvm_memory_max_bytes{area='heap'}) * 100",
+          "legendFormat": "Taxa de Uso (%)",
+          "refId": "C",
+          "hide": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "decimals": 0
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byRegexp", "options": ".*Taxa.*"},
+            "properties": [{"id": "unit", "value": "percent"}]
+          }
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "title": "⚙️ 4. SATURAÇÃO - CONEXÕES ATIVAS",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 26},
+      "description": "Número de conexões ativas no banco de dados",
+      "targets": [
+        {
+          "expr": "hikaricp_connections_active",
+          "legendFormat": "Conexões Ativas",
+          "refId": "A"
+        },
+        {
+          "expr": "hikaricp_connections_max",
+          "legendFormat": "Máximo de Conexões",
+          "refId": "B"
+        },
+        {
+          "expr": "http_requests_active",
+          "legendFormat": "Requisições Ativas",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 8},
+              {"color": "red", "value": 9}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "📊 RESUMO DAS GOLDEN SIGNALS",
+      "type": "stat",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 26},
+      "description": "Status geral do sistema baseado nas 4 Golden Signals",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(order_create_duration_bucket[5m])) by (le))",
+          "legendFormat": "Latência P95",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["last"]
+        },
+        "text": {},
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      }
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "time_range",
+        "type": "interval",
+        "auto": true,
+        "auto_min": "1m",
+        "options": [
+          {"text": "Últimos 5 min", "value": "5m"},
+          {"text": "Últimos 15 min", "value": "15m"},
+          {"text": "Últimos 30 min", "value": "30m"},
+          {"text": "Última hora", "value": "1h"},
+          {"text": "Últimas 24h", "value": "24h"}
+        ]
+      }
+    ]
+  }
+}

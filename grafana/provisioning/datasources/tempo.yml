@@ -1,0 +1,20 @@
+apiVersion: 1
+
+datasources:
+  - name: Tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    isDefault: false
+    editable: true
+    version: 1
+    jsonData:
+      httpMethod: GET
+      serviceMap:
+        datasourceUid: prometheus
+      tracesToLogs:
+        datasourceUid: 'loki'  # Se não tiver Loki, remova esta linha
+        tags: ['trace_id']
+        mappedTags: [{key: 'trace_id', value: 'trace_id'}]
+      nodeGraph:
+        enabled: true
