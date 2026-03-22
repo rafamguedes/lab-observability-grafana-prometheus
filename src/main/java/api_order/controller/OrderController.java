@@ -6,7 +6,6 @@ import api_order.service.OrderService;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.DistributionSummary;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,16 +27,13 @@ public class OrderController {
   private final OrderService orderService;
   private final MeterRegistry meterRegistry;
 
-  // Métricas de Latência
   private final Timer orderCreationTimer;
   private final Timer requestTimer;
 
-  // Métricas de Tráfego
   private final Counter totalRequestsCounter;
   private final Counter successRequestsCounter;
   private final Counter errorRequestsCounter;
 
-  // Métricas de Saturação
   private final AtomicInteger activeRequests = new AtomicInteger(0);
 
   @Autowired
@@ -45,21 +41,19 @@ public class OrderController {
     this.orderService = orderService;
     this.meterRegistry = meterRegistry;
 
-    // Latência - Timer para medir tempo de criação de pedido
     this.orderCreationTimer = Timer.builder("order.create.duration")
             .description("Tempo para criar um pedido")
-            .publishPercentiles(0.5, 0.95, 0.99)  // P50, P95, P99
+            .publishPercentiles(0.5, 0.95, 0.99)
             .publishPercentileHistogram()
             .sla(
-                    Duration.ofMillis(50),   // 50ms
-                    Duration.ofMillis(100),  // 100ms
-                    Duration.ofMillis(500),  // 500ms
-                    Duration.ofSeconds(1),   // 1s
-                    Duration.ofSeconds(2)    // 2s
+                    Duration.ofMillis(50),
+                    Duration.ofMillis(100),
+                    Duration.ofMillis(500),
+                    Duration.ofSeconds(1),
+                    Duration.ofSeconds(2)
             )
             .register(meterRegistry);
 
-    // Latência - Timer geral para todas as requisições
     this.requestTimer = Timer.builder("http.request.duration")
             .description("Tempo total das requisições HTTP")
             .publishPercentiles(0.5, 0.95, 0.99)
@@ -74,7 +68,6 @@ public class OrderController {
             .tag("endpoint", "/api/orders")
             .register(meterRegistry);
 
-    // Tráfego - Contadores
     this.totalRequestsCounter = Counter.builder("http.requests.total")
             .description("Total de requisições HTTP")
             .tag("endpoint", "/api/orders")
@@ -90,33 +83,23 @@ public class OrderController {
             .tag("endpoint", "/api/orders")
             .register(meterRegistry);
 
-    // Saturação - Gauge para requisições ativas
     meterRegistry.gauge("http.requests.active", activeRequests);
-
-    // Saturação - CPU e Memória já são expostas pelo Spring Boot Actuator
   }
 
   @PostMapping
   public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody OrderRequest request) {
-    // Saturação: incrementa contador de requisições ativas
     int active = activeRequests.incrementAndGet();
     log.info("Requisições ativas: {}", active);
 
-    // Tráfego: incrementa contador total
     totalRequestsCounter.increment();
 
-    // Latência: inicia timer
-    Timer.Sample sample = Timer.start(meterRegistry);
     long startTime = System.nanoTime();
 
     try {
-      // Processa a requisição
       OrderResponse response = orderService.createOrder(request);
 
-      // Tráfego: sucesso
       successRequestsCounter.increment();
 
-      // Latência: registra tempo de criação específico
       long duration = System.nanoTime() - startTime;
       orderCreationTimer.record(duration, TimeUnit.NANOSECONDS);
       requestTimer.record(duration, TimeUnit.NANOSECONDS);
@@ -126,10 +109,8 @@ public class OrderController {
       return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
     } catch (Exception e) {
-      // Tráfego: erro
       errorRequestsCounter.increment();
 
-      // Latência: registra tempo mesmo com erro
       long duration = System.nanoTime() - startTime;
       requestTimer.record(duration, TimeUnit.NANOSECONDS);
 
@@ -137,7 +118,6 @@ public class OrderController {
       throw e;
 
     } finally {
-      // Saturação: decrementa requisições ativas
       activeRequests.decrementAndGet();
     }
   }

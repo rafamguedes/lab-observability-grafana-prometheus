@@ -28,11 +28,9 @@ public class OrderService {
   public OrderResponse createOrder(OrderRequest request) {
     log.info("Creating new purchase order: {}", request.getOrderNumber());
 
-    // Calculate total amount
     BigDecimal totalAmount =
         request.getUnitPrice().multiply(BigDecimal.valueOf(request.getQuantity()));
 
-    // Create entity
     OrderEntity order = new OrderEntity();
     order.setOrderNumber(request.getOrderNumber());
     order.setSupplierId(request.getSupplierId());
@@ -45,11 +43,9 @@ public class OrderService {
     order.setCreatedAt(LocalDateTime.now());
     order.setUpdatedAt(LocalDateTime.now());
 
-    // Save to database
     OrderEntity savedOrder = orderRepository.save(order);
     log.info("Order created successfully with ID: {}", savedOrder.getId());
 
-    // Return response
     return OrderResponse.builder()
         .id(savedOrder.getId())
         .orderNumber(savedOrder.getOrderNumber())
