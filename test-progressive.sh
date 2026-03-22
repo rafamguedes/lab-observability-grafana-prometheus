@@ -20,7 +20,7 @@ echo "rps,total,errors,error_pct,p95_ms" > "$RESULT_FILE"
 G='\033[0;32m' R='\033[0;31m' Y='\033[1;33m' C='\033[0;36m' NC='\033[0m'
 
 # ── Verificações ──────────────────────────────────────────────────────────────
-for cmd in curl awk bc jq; do
+for cmd in curl awk; do
   command -v "$cmd" &>/dev/null || { echo "Dependência ausente: $cmd"; exit 1; }
 done
 

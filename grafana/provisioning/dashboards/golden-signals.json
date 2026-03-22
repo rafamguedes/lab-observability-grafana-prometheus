@@ -67,12 +67,12 @@
           "refId": "A"
         },
         {
-          "expr": "rate(http_requests_total{status='success'}[1m])",
+          "expr": "sum(rate(http_requests_total{status=\"success\"}[1m]))",
           "legendFormat": "Sucesso",
           "refId": "B"
         },
         {
-          "expr": "rate(http_requests_total{status='error'}[1m])",
+          "expr": "sum(rate(http_requests_total{status=\"error\"}[1m]))",
           "legendFormat": "Erro",
           "refId": "C"
         }
@@ -89,7 +89,7 @@
       "description": "Percentual de requisições com erro",
       "targets": [
         {
-          "expr": "rate(http_requests_total{status='error'}[1m]) / sum(rate(http_requests_total[1m])) * 100",
+          "expr": "sum(rate(http_requests_total{status=\"error\"}[1m])) / sum(rate(http_requests_total[1m])) * 100",
           "legendFormat": "Taxa de erro",
           "refId": "A"
         }
@@ -156,17 +156,17 @@
       "description": "Uso de memória heap da JVM",
       "targets": [
         {
-          "expr": "jvm_memory_used_bytes{area='heap'}",
+          "expr": "jvm_memory_used_bytes{area=\"heap\"}",
           "legendFormat": "Heap usado",
           "refId": "A"
         },
         {
-          "expr": "jvm_memory_max_bytes{area='heap'}",
+          "expr": "jvm_memory_max_bytes{area=\"heap\"}",
           "legendFormat": "Heap máximo",
           "refId": "B"
         },
         {
-          "expr": "(jvm_memory_used_bytes{area='heap'} / jvm_memory_max_bytes{area='heap'}) * 100",
+          "expr": "(jvm_memory_used_bytes{area=\"heap\"} / jvm_memory_max_bytes{area=\"heap\"}) * 100",
           "legendFormat": "Uso (%)",
           "refId": "C"
         }
@@ -216,7 +216,7 @@
       "description": "Status atual do sistema",
       "targets": [
         {
-          "expr": "rate(http_requests_total{status='error'}[1m]) / sum(rate(http_requests_total[1m])) * 100",
+          "expr": "sum(rate(http_requests_total{status=\"error\"}[1m])) / sum(rate(http_requests_total[1m])) * 100",
           "legendFormat": "Taxa de erro (%)",
           "refId": "A"
         },

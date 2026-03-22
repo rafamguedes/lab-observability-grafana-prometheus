@@ -26,7 +26,7 @@ Serviços disponíveis após a inicialização:
 | Order Service API | http://localhost:8080 | — |
 | Prometheus | http://localhost:9090 | — |
 | Grafana | http://localhost:3000 | admin / admin |
-| Tempo | http://localhost:3200 | — |
+| Grafana Tempo (tracing) | http://localhost:3200 | — |
 
 ---
 

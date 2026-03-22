@@ -36,16 +36,7 @@ management:
       exposure:
         include: health,info,metrics,prometheus,env
       base-path: /actuator
-  endpoint:
-    metrics:
-      enabled: true
-    prometheus:
-      enabled: true
   metrics:
-    export:
-      prometheus:
-        enabled: true
-        step: 10s
     tags:
       application: ${spring.application.name}
       environment: ${ENVIRONMENT:development}
@@ -55,9 +46,14 @@ management:
         order.create.duration: true
         http.request.duration: true
       slo:
-        http.server.requests: 10ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s
-        order.create.duration: 50ms, 100ms, 500ms, 1s, 2s
-        http.request.duration: 50ms, 100ms, 500ms, 1s, 2s
+        http_server_requests: 10ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s
+        order_create_duration: 50ms, 100ms, 500ms, 1s, 2s
+        http_request_duration: 50ms, 100ms, 500ms, 1s, 2s
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+        step: 15s
 
 logging:
   level:
