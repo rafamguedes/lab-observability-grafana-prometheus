@@ -90,13 +90,11 @@ Latência (ms):
 ─────────────────────────────────────
 ```
 
-### `load-test-progressive.sh` — descoberta de limite
-
-Aumenta o RPS em estágios até encontrar o ponto de degradação do sistema. Salva os resultados em CSV para análise posterior.
+### `test-progressive.sh` — descoberta de limite
 
 ```bash
 chmod +x load-test-progressive.sh
-./load-test-progressive.sh
+./test-progressive.sh
 ```
 
 Configurações padrão (editáveis no início do script):
@@ -126,24 +124,4 @@ Pico sustentado:  500 RPS
 Parou por:        erro 8.1% > 5%
 Resultados:       progressive-20250101-120000.csv
 ─────────────────────────────────────
-```
-
-O CSV gerado contém `rps, total, errors, error_pct, p95_ms` por estágio, útil para análise de degradação ou comparação entre deploys.
-
----
-
-## Queries úteis no Grafana
-
-```promql
-# Tráfego
-sum(rate(http_requests_total[1m]))
-
-# Taxa de erro
-rate(http_requests_total{status="error"}[1m]) / sum(rate(http_requests_total[1m])) * 100
-
-# Latência P95
-histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
-
-# Requisições ativas
-http_requests_active
 ```
