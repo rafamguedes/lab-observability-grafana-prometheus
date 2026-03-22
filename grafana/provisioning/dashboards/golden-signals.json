@@ -9,24 +9,24 @@
   "panels": [
     {
       "id": 1,
-      "title": "📊 1. LATÊNCIA (P50, P95, P99)",
+      "title": "Latência (P50, P95, P99)",
       "type": "timeseries",
       "gridPos": {"h": 10, "w": 24, "x": 0, "y": 0},
-      "description": "Tempo de resposta das requisições - Quanto menor, melhor",
+      "description": "Tempo de resposta das requisições — quanto menor, melhor",
       "targets": [
         {
           "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
-          "legendFormat": "P50 (Mediana)",
+          "legendFormat": "P50 (mediana)",
           "refId": "A"
         },
         {
           "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
-          "legendFormat": "P95 (95% das requisições)",
+          "legendFormat": "P95",
           "refId": "B"
         },
         {
           "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
-          "legendFormat": "P99 (99% das requisições)",
+          "legendFormat": "P99",
           "refId": "C"
         },
         {
@@ -50,56 +50,47 @@
         }
       },
       "options": {
-        "legend": {
-          "calcs": ["mean", "max", "last"],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "multi"
-        }
+        "legend": {"calcs": ["mean", "max", "last"], "displayMode": "list", "placement": "bottom"},
+        "tooltip": {"mode": "multi"}
       }
     },
     {
       "id": 2,
-      "title": "📈 2. TRÁFEGO (Requests por Segundo)",
-      "type": "graph",
+      "title": "Tráfego (requisições por segundo)",
+      "type": "timeseries",
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 10},
       "description": "Volume de requisições por segundo",
       "targets": [
         {
-          "expr": "rate(http_requests_total[1m])",
-          "legendFormat": "Total de Requisições",
+          "expr": "sum(rate(http_requests_total[1m]))",
+          "legendFormat": "Total req/s",
           "refId": "A"
         },
         {
-          "expr": "rate(http_requests_success_total[1m])",
-          "legendFormat": "Requisições Bem Sucedidas",
+          "expr": "rate(http_requests_total{status='success'}[1m])",
+          "legendFormat": "Sucesso",
           "refId": "B"
         },
         {
-          "expr": "rate(http_requests_error_total[1m])",
-          "legendFormat": "Requisições com Erro",
+          "expr": "rate(http_requests_total{status='error'}[1m])",
+          "legendFormat": "Erro",
           "refId": "C"
         }
       ],
       "fieldConfig": {
-        "defaults": {
-          "unit": "reqps",
-          "decimals": 1
-        }
+        "defaults": {"unit": "reqps", "decimals": 1}
       }
     },
     {
       "id": 3,
-      "title": "❌ 3. TAXA DE ERRO (%)",
+      "title": "Taxa de erro (%)",
       "type": "timeseries",
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 10},
       "description": "Percentual de requisições com erro",
       "targets": [
         {
-          "expr": "(http_requests_error_total / http_requests_total) * 100",
-          "legendFormat": "Taxa de Erro",
+          "expr": "rate(http_requests_total{status='error'}[1m]) / sum(rate(http_requests_total[1m])) * 100",
+          "legendFormat": "Taxa de erro",
           "refId": "A"
         }
       ],
@@ -120,31 +111,25 @@
         }
       },
       "options": {
-        "legend": {
-          "calcs": ["last", "mean", "max"],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
+        "legend": {"calcs": ["last", "mean", "max"], "displayMode": "list", "placement": "bottom"},
+        "tooltip": {"mode": "single"}
       }
     },
     {
       "id": 4,
-      "title": "⚙️ 4. SATURAÇÃO - CPU",
-      "type": "graph",
+      "title": "Saturação — CPU",
+      "type": "timeseries",
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 18},
       "description": "Uso de CPU do processo",
       "targets": [
         {
           "expr": "rate(process_cpu_usage[1m]) * 100",
-          "legendFormat": "CPU do Processo (%)",
+          "legendFormat": "CPU processo (%)",
           "refId": "A"
         },
         {
           "expr": "system_cpu_usage * 100",
-          "legendFormat": "CPU do Sistema (%)",
+          "legendFormat": "CPU sistema (%)",
           "refId": "B"
         }
       ],
@@ -165,35 +150,32 @@
     },
     {
       "id": 5,
-      "title": "⚙️ 5. SATURAÇÃO - MEMÓRIA",
-      "type": "graph",
+      "title": "Saturação — memória (JVM heap)",
+      "type": "timeseries",
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 18},
       "description": "Uso de memória heap da JVM",
       "targets": [
         {
-          "expr": "jvm_memory_used_bytes{area='heap'} / 1048576",
-          "legendFormat": "Heap Usado (MB)",
+          "expr": "jvm_memory_used_bytes{area='heap'}",
+          "legendFormat": "Heap usado",
           "refId": "A"
         },
         {
-          "expr": "jvm_memory_max_bytes{area='heap'} / 1048576",
-          "legendFormat": "Heap Máximo (MB)",
+          "expr": "jvm_memory_max_bytes{area='heap'}",
+          "legendFormat": "Heap máximo",
           "refId": "B"
         },
         {
           "expr": "(jvm_memory_used_bytes{area='heap'} / jvm_memory_max_bytes{area='heap'}) * 100",
-          "legendFormat": "Taxa de Uso (%)",
+          "legendFormat": "Uso (%)",
           "refId": "C"
         }
       ],
       "fieldConfig": {
-        "defaults": {
-          "unit": "bytes",
-          "decimals": 0
-        },
+        "defaults": {"unit": "bytes", "decimals": 0},
         "overrides": [
           {
-            "matcher": {"id": "byRegexp", "options": ".*Taxa.*"},
+            "matcher": {"id": "byName", "options": "Uso (%)"},
             "properties": [{"id": "unit", "value": "percent"}]
           }
         ]
@@ -201,75 +183,66 @@
     },
     {
       "id": 6,
-      "title": "⚙️ 6. SATURAÇÃO - CONEXÕES",
-      "type": "graph",
+      "title": "Saturação — conexões e threads",
+      "type": "timeseries",
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 26},
       "description": "Conexões ativas no banco e requisições simultâneas",
       "targets": [
         {
           "expr": "hikaricp_connections_active",
-          "legendFormat": "Conexões DB Ativas",
+          "legendFormat": "Conexões DB ativas",
           "refId": "A"
         },
         {
           "expr": "http_requests_active",
-          "legendFormat": "Requisições Ativas",
+          "legendFormat": "Requisições ativas",
           "refId": "B"
         },
         {
           "expr": "jvm_threads_live_threads",
-          "legendFormat": "Threads Ativas",
+          "legendFormat": "Threads ativas",
           "refId": "C"
         }
       ],
       "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "decimals": 0
-        }
+        "defaults": {"unit": "short", "decimals": 0}
       }
     },
     {
       "id": 7,
-      "title": "📊 RESUMO DAS GOLDEN SIGNALS",
+      "title": "Resumo — golden signals",
       "type": "stat",
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 26},
       "description": "Status atual do sistema",
       "targets": [
         {
-          "expr": "(http_requests_error_total / http_requests_total) * 100",
-          "legendFormat": "Taxa de Erro",
+          "expr": "rate(http_requests_total{status='error'}[1m]) / sum(rate(http_requests_total[1m])) * 100",
+          "legendFormat": "Taxa de erro (%)",
           "refId": "A"
         },
         {
-          "expr": "rate(http_requests_total[1m])",
+          "expr": "sum(rate(http_requests_total[1m]))",
           "legendFormat": "Tráfego (req/s)",
           "refId": "B"
         },
         {
           "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
-          "legendFormat": "Latência P95",
+          "legendFormat": "Latência P95 (s)",
           "refId": "C"
         },
         {
           "expr": "rate(process_cpu_usage[1m]) * 100",
-          "legendFormat": "CPU %",
+          "legendFormat": "CPU (%)",
           "refId": "D"
         }
       ],
       "options": {
-        "reduceOptions": {
-          "values": false,
-          "calcs": ["last"]
-        },
+        "reduceOptions": {"values": false, "calcs": ["last"]},
         "colorMode": "value",
         "graphMode": "none",
         "justifyMode": "auto"
       }
     }
   ],
-  "time": {
-    "from": "now-5m",
-    "to": "now"
-  }
+  "time": {"from": "now-5m", "to": "now"}
 }

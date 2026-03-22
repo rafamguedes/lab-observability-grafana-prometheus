@@ -26,7 +26,7 @@ public class OrderService {
       lowCardinalityKeyValues = {"orderType", "purchase"})
   @Transactional
   public OrderResponse createOrder(OrderRequest request) {
-    log.info("Creating new purchase order: {}", request.getOrderNumber());
+    log.info("Criando pedido: {}", request.getOrderNumber());
 
     BigDecimal totalAmount =
         request.getUnitPrice().multiply(BigDecimal.valueOf(request.getQuantity()));
@@ -43,42 +43,40 @@ public class OrderService {
     order.setCreatedAt(LocalDateTime.now());
     order.setUpdatedAt(LocalDateTime.now());
 
-    OrderEntity savedOrder = orderRepository.save(order);
-    log.info("Order created successfully with ID: {}", savedOrder.getId());
+    OrderEntity saved = orderRepository.save(order);
+    log.info("Pedido salvo com ID: {}", saved.getId());
 
-    return toResponse(savedOrder);
+    return toResponse(saved);
   }
 
   @Observed(name = "order.get", contextualName = "getting-order")
   @Transactional(readOnly = true)
   public OrderResponse getOrder(String id) {
-    log.info("Fetching order with ID: {}", id);
+    log.info("Buscando pedido ID: {}", id);
 
-    OrderEntity order =
-        orderRepository
-            .findById(id)
-            .orElseThrow(
-                () -> {
-                  log.error("Order not found with ID: {}", id);
-                  return new RuntimeException("Order not found");
-                });
-
-    return toResponse(order);
+    return orderRepository
+        .findById(id)
+        .map(this::toResponse)
+        .orElseThrow(
+            () -> {
+              log.error("Pedido não encontrado: {}", id);
+              return new RuntimeException("Order not found");
+            });
   }
 
-  private static OrderResponse toResponse(OrderEntity savedOrder) {
+  private OrderResponse toResponse(OrderEntity order) {
     return OrderResponse.builder()
-        .id(savedOrder.getId())
-        .orderNumber(savedOrder.getOrderNumber())
-        .supplierId(savedOrder.getSupplierId())
-        .productId(savedOrder.getProductId())
-        .quantity(savedOrder.getQuantity())
-        .unitPrice(savedOrder.getUnitPrice())
-        .totalAmount(savedOrder.getTotalAmount())
-        .status(savedOrder.getStatus())
-        .notes(savedOrder.getNotes())
-        .createdAt(savedOrder.getCreatedAt())
-        .updatedAt(savedOrder.getUpdatedAt())
+        .id(order.getId())
+        .orderNumber(order.getOrderNumber())
+        .supplierId(order.getSupplierId())
+        .productId(order.getProductId())
+        .quantity(order.getQuantity())
+        .unitPrice(order.getUnitPrice())
+        .totalAmount(order.getTotalAmount())
+        .status(order.getStatus())
+        .notes(order.getNotes())
+        .createdAt(order.getCreatedAt())
+        .updatedAt(order.getUpdatedAt())
         .build();
   }
 }
