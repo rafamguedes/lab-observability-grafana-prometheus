@@ -31,21 +31,22 @@ public class OrderController {
   public OrderController(OrderService orderService, MeterRegistry registry) {
     this.orderService = orderService;
 
-    this.requestTimer = Timer.builder("http_request_duration_seconds")
+    this.requestTimer =
+        Timer.builder("http_request_duration_seconds")
             .description("Tempo de resposta das requisições HTTP")
             .publishPercentiles(0.5, 0.95, 0.99)
             .publishPercentileHistogram()
             .tag("endpoint", "/api/orders")
             .register(registry);
 
-    this.successCounter = Counter.builder("http_requests_total")
-            .description("Total de requisições HTTP")
+    this.successCounter =
+        Counter.builder("http_requests_total")
             .tag("endpoint", "/api/orders")
             .tag("status", "success")
             .register(registry);
 
-    this.errorCounter = Counter.builder("http_requests_total")
-            .description("Total de requisições HTTP")
+    this.errorCounter =
+        Counter.builder("http_requests_total")
             .tag("endpoint", "/api/orders")
             .tag("status", "error")
             .register(registry);
@@ -57,12 +58,13 @@ public class OrderController {
   public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody OrderRequest request) {
     activeRequests.incrementAndGet();
     try {
-      return requestTimer.record(() -> {
-        OrderResponse response = orderService.createOrder(request);
-        successCounter.increment();
-        log.info("Pedido criado: {}", response.getId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-      });
+      return requestTimer.record(
+          () -> {
+            OrderResponse response = orderService.createOrder(request);
+            successCounter.increment();
+            log.info("Pedido criado: {}", response.getId());
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+          });
     } catch (Exception e) {
       errorCounter.increment();
       log.error("Erro ao criar pedido: {}", e.getMessage());

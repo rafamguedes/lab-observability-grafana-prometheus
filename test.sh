@@ -34,13 +34,15 @@ if ! curl -sf "$BASE_URL/actuator/health" | grep -q '"UP"'; then
 fi
 
 # ── Workers ──────────────────────────────────────────────────────────────────
-# Cada worker envia requisições em loop até END_TIME.
-# 95% sucesso, 5% erro intencional (validação).
+# Cada worker dispara requisições em loop até END_TIME.
+# O intervalo entre requisições desconta o tempo gasto no curl,
+# evitando dependência de sleep com decimais (não suportado no Windows).
+# 95% sucesso, 5% erro intencional para popular a métrica de erros.
 worker() {
   local id="$1"
   local end="$2"
-  local interval
-  interval=$(awk "BEGIN{printf \"%.4f\", 1/($TARGET_RPS/$WORKERS)}")
+  local worker_rps=$(( TARGET_RPS / WORKERS ))
+  local interval_ms=$(( 1000 / (worker_rps > 0 ? worker_rps : 1) ))
 
   while (( $(date +%s) < end )); do
     local t0; t0=$(date +%s%3N)
@@ -67,7 +69,6 @@ worker() {
         echo 1 >> "$ERROR_LOG"
       fi
     else
-      # Requisição inválida para gerar erro controlado
       curl -s -o /dev/null \
         -X POST "$BASE_URL/api/orders" \
         -H "Content-Type: application/json" \
@@ -75,7 +76,14 @@ worker() {
       echo 1 >> "$ERROR_LOG"
     fi
 
-    sleep "$interval" 2>/dev/null || true
+    # Descontar tempo gasto na requisição do intervalo alvo.
+    # Se a requisição já demorou mais que o intervalo, seguir imediatamente.
+    local t1; t1=$(date +%s%3N)
+    local elapsed=$(( t1 - t0 ))
+    local wait_ms=$(( interval_ms - elapsed ))
+    if (( wait_ms > 0 )); then
+      sleep "$(awk "BEGIN{printf \"%.3f\", $wait_ms/1000}")" 2>/dev/null || true
+    fi
   done
 }
 

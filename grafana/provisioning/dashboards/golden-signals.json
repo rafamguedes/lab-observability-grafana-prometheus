@@ -1,7 +1,11 @@
 {
   "title": "Golden Signals - Order Service",
   "uid": "golden-signals-v2",
-  "tags": ["golden-signals", "order-service", "monitoring"],
+  "tags": [
+    "golden-signals",
+    "order-service",
+    "monitoring"
+  ],
   "timezone": "browser",
   "schemaVersion": 16,
   "version": 1,
@@ -11,7 +15,12 @@
       "id": 1,
       "title": "Latência (P50, P95, P99)",
       "type": "timeseries",
-      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 0},
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
       "description": "Tempo de resposta das requisições — quanto menor, melhor",
       "targets": [
         {
@@ -42,23 +51,47 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              {"color": "green", "value": null},
-              {"color": "yellow", "value": 0.5},
-              {"color": "red", "value": 1}
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.5
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
             ]
           }
         }
       },
       "options": {
-        "legend": {"calcs": ["mean", "max", "last"], "displayMode": "list", "placement": "bottom"},
-        "tooltip": {"mode": "multi"}
+        "legend": {
+          "calcs": [
+            "mean",
+            "max",
+            "last"
+          ],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       }
     },
     {
       "id": 2,
       "title": "Tráfego (requisições por segundo)",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 10},
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 10
+      },
       "description": "Volume de requisições por segundo",
       "targets": [
         {
@@ -78,20 +111,28 @@
         }
       ],
       "fieldConfig": {
-        "defaults": {"unit": "reqps", "decimals": 1}
+        "defaults": {
+          "unit": "reqps",
+          "decimals": 1
+        }
       }
     },
     {
       "id": 3,
       "title": "Taxa de erro (%)",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 10},
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 10
+      },
       "description": "Percentual de requisições com erro",
       "targets": [
         {
-          "expr": "sum(rate(http_requests_total{status=\"error\"}[1m])) / sum(rate(http_requests_total[1m])) * 100",
-          "legendFormat": "Taxa de erro",
-          "refId": "A"
+          "expr": "label_replace((sum(rate(http_requests_total{status=\"error\"}[1m])) or vector(0)) / sum(rate(http_requests_total[1m])) * 100, \"serie\", \"Taxa de erro\", \"\", \"\")",
+          "refId": "A",
+          "legendFormat": "{{serie}}"
         }
       ],
       "fieldConfig": {
@@ -103,23 +144,47 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              {"color": "green", "value": null},
-              {"color": "yellow", "value": 1},
-              {"color": "red", "value": 5}
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
             ]
           }
         }
       },
       "options": {
-        "legend": {"calcs": ["last", "mean", "max"], "displayMode": "list", "placement": "bottom"},
-        "tooltip": {"mode": "single"}
+        "legend": {
+          "calcs": [
+            "last",
+            "mean",
+            "max"
+          ],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
       }
     },
     {
       "id": 4,
       "title": "Saturação — CPU",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 18},
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
       "description": "Uso de CPU do processo",
       "targets": [
         {
@@ -140,9 +205,18 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              {"color": "green", "value": null},
-              {"color": "yellow", "value": 70},
-              {"color": "red", "value": 85}
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 85
+              }
             ]
           }
         }
@@ -152,7 +226,12 @@
       "id": 5,
       "title": "Saturação — memória (JVM heap)",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 18},
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
       "description": "Uso de memória heap da JVM",
       "targets": [
         {
@@ -172,11 +251,22 @@
         }
       ],
       "fieldConfig": {
-        "defaults": {"unit": "bytes", "decimals": 0},
+        "defaults": {
+          "unit": "bytes",
+          "decimals": 0
+        },
         "overrides": [
           {
-            "matcher": {"id": "byName", "options": "Uso (%)"},
-            "properties": [{"id": "unit", "value": "percent"}]
+            "matcher": {
+              "id": "byName",
+              "options": "Uso (%)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              }
+            ]
           }
         ]
       }
@@ -185,7 +275,12 @@
       "id": 6,
       "title": "Saturação — conexões e threads",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 26},
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 26
+      },
       "description": "Conexões ativas no banco e requisições simultâneas",
       "targets": [
         {
@@ -205,19 +300,27 @@
         }
       ],
       "fieldConfig": {
-        "defaults": {"unit": "short", "decimals": 0}
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        }
       }
     },
     {
       "id": 7,
       "title": "Resumo — golden signals",
       "type": "stat",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 26},
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 26
+      },
       "description": "Status atual do sistema",
       "targets": [
         {
-          "expr": "sum(rate(http_requests_total{status=\"error\"}[1m])) / sum(rate(http_requests_total[1m])) * 100",
-          "legendFormat": "Taxa de erro (%)",
+          "expr": "label_replace((sum(rate(http_requests_total{status=\"error\"}[1m])) or vector(0)) / sum(rate(http_requests_total[1m])) * 100, \"serie\", \"Taxa de erro\", \"\", \"\")",
+          "legendFormat": "{{serie}}",
           "refId": "A"
         },
         {
@@ -237,12 +340,20 @@
         }
       ],
       "options": {
-        "reduceOptions": {"values": false, "calcs": ["last"]},
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "last"
+          ]
+        },
         "colorMode": "value",
         "graphMode": "none",
         "justifyMode": "auto"
       }
     }
   ],
-  "time": {"from": "now-5m", "to": "now"}
+  "time": {
+    "from": "now-5m",
+    "to": "now"
+  }
 }

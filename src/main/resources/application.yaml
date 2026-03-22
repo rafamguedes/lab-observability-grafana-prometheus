@@ -14,7 +14,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create-drop
     show-sql: false
     properties:
       hibernate:
@@ -43,21 +43,17 @@ management:
     distribution:
       percentiles-histogram:
         http.server.requests: true
-        order.create.duration: true
-        http.request.duration: true
       slo:
-        http_server_requests: 10ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s
-        order_create_duration: 50ms, 100ms, 500ms, 1s, 2s
-        http_request_duration: 50ms, 100ms, 500ms, 1s, 2s
+        http.server.requests: 10ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s
   prometheus:
     metrics:
       export:
         enabled: true
-        step: 15s
+        step: 10s
 
 logging:
   level:
-    com.example: INFO
+    api_order: INFO
     org.springframework.web: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %level - [%thread] - %msg%n"
