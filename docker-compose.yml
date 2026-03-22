@@ -110,4 +110,4 @@ volumes:
 networks:
   observability:
     driver: bridge
-    name: observability  # Nome explícito da rede
+    name: observability
