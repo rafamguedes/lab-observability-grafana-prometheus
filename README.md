@@ -1,189 +1,149 @@
-# Visão Geral
+# Order Service — Observabilidade
 
-Laboratório desenvolvido em Spring Boot para gerenciamento de pedidos de compra, com foco em observabilidade e monitoramento. O sistema expõe métricas detalhadas que permitem acompanhar as 4 Golden Signals de monitoramento:
+Laboratório em Spring Boot para gerenciamento de pedidos de compra, com foco nas 4 Golden Signals de monitoramento.
 
-- Latência - Tempo de resposta das requisições
-- Tráfego - Volume de requisições por segundo
-- Erros - Taxa de falhas nas operações
-- Saturação - Uso de CPU, memória e conexões
+| Sinal | O que mede |
+|---|---|
+| Latência | Tempo de resposta das requisições (P50 / P95 / P99) |
+| Tráfego | Volume de requisições por segundo |
+| Erros | Taxa de falhas nas operações |
+| Saturação | CPU, memória heap e conexões do pool |
 
-## Instalação e Execução
+---
 
-1. Clone o repositório
+## Instalação e execução
 
-```
+```bash
 git clone https://github.com/yourusername/order-service.git
 cd order-service
-```
-
-2. Execute com Docker Compose
-
-```
 docker-compose up -d
-docker-compose ps
-docker-compose logs -f
 ```
 
-3. Acessar os serviços
+Serviços disponíveis após a inicialização:
 
-- Order Service API	http://localhost:8080
-- Prometheus	http://localhost:9090
-- Grafana	http://localhost:3000	admin / admin
-- Tempo	http://localhost:3200
+| Serviço | URL | Credenciais |
+|---|---|---|
+| Order Service API | http://localhost:8080 | — |
+| Prometheus | http://localhost:9090 | — |
+| Grafana | http://localhost:3000 | admin / admin |
+| Tempo | http://localhost:3200 | — |
+
+---
 
 ## Monitoramento
 
-Dashboards do Grafana
-Importe o dashboard pré-configurado:
+### Dashboard Grafana
 
-1. Acesse http://localhost:3000
-2. Login: admin / admin
-3. Menu lateral → Dashboards → Import
-4. Cole o JSON do dashboard (disponível em grafana/provisioning/dashboards/golden-signals.json)
-5. Selecione o datasource Prometheus
-6. Clique em Import
+O dashboard é provisionado automaticamente via `grafana/provisioning/dashboards/golden-signals.json`. Basta acessar http://localhost:3000 após subir o stack.
 
-### Métricas Disponíveis no Dashboard
+Para importar manualmente:
 
-1. LATÊNCIA (P50, P95, P99)
-    - Tempo de resposta das requisições
-    - Percentis para análise de performance
-    - Alertas configurados para > 1s
+1. Acesse http://localhost:3000 → login `admin / admin`
+2. Menu lateral → **Dashboards → Import**
+3. Cole o conteúdo de `grafana/provisioning/dashboards/golden-signals.json`
+4. Selecione o datasource **Prometheus** e clique em **Import**
+
+### Thresholds configurados
+
+| Métrica | Atenção | Crítico |
+|---|---|---|
+| Latência | > 500ms | > 1s |
+| Taxa de erro | > 1% | > 5% |
+| CPU | > 70% | > 85% |
+
 ---
-2. TRÁFEGO (Requests por Segundo)
-    - Total de requisições por segundo
-    - Requisições bem sucedidas vs com erro
-    - Picos de tráfego
----
-3. TAXA DE ERRO (%)
 
-    - Percentual de requisições com falha
+## Testes de carga
 
-    - Thresholds: <1% (bom), 1-5% (atenção), >5% (crítico)
----
-4. SATURAÇÃO
-   
-    - CPU: Uso do processador (%)
+Dois scripts disponíveis, ambos com health check automático antes de iniciar.
 
-    - Memória: Heap usado vs máximo
+### `test.sh` — volume configurável
 
-    - Conexões: Pool do banco de dados
+Envia carga por um período fixo. Útil para popular métricas no Grafana e verificar comportamento sob carga conhecida.
 
-## Testes de Carga
+```bash
+chmod +x test.sh
 
-Esta seção explica como usar os scripts de teste de carga para descobrir a capacidade máxima da sua aplicação.
-
-**Teste de Carga Progressivo**
-
-Este teste aumenta gradualmente a carga até encontrar o limite da aplicação. É útil para descobrir o ponto de degradação do sistema.
-
-**Como executar:**
-
+./test.sh                  # padrão: 100 rps, 30s, 10 workers
+./test.sh 500 60           # 500 rps por 60 segundos
+./test.sh 2000 30 20       # 2000 rps, 30s, 20 workers concorrentes
 ```
-# Dar permissão de execução
-chmod +x load-test-progressive.sh
 
-# Executar o teste
+A distribuição é 95% requisições válidas e 5% inválidas, para gerar taxa de erro controlada visível no dashboard.
+
+Saída durante o teste:
+```
+[ 5s] rps:   98  ok:   489  err:   26  erro:  5.1%  lat_avg: 42ms
+[10s] rps:   97  ok:   972  err:   53  erro:  5.2%  lat_avg: 45ms
+```
+
+Resumo ao final:
+```
+─────────────────────────────────────
+Total:       2950 req em 30s
+RPS real:    98
+Sucesso:     2802
+Erro:        148  (5.0%)
+
+Latência (ms):
+  min=18ms  p50=38ms  p95=112ms  p99=198ms  max=340ms  avg=42ms
+─────────────────────────────────────
+```
+
+### `load-test-progressive.sh` — descoberta de limite
+
+Aumenta o RPS em estágios até encontrar o ponto de degradação do sistema. Salva os resultados em CSV para análise posterior.
+
+```bash
+chmod +x load-test-progressive.sh
 ./load-test-progressive.sh
 ```
 
-**O que o teste faz:**
+Configurações padrão (editáveis no início do script):
 
-- Começa com 50 RPS (requisições por segundo)
-- Aumenta 100 RPS a cada estágio
-- Cada estágio dura 15 segundos 
-- Para quando taxa de erro > 5% ou latência > 1000ms
-- Salva os resultados em um arquivo CSV
+| Parâmetro | Valor padrão |
+|---|---|
+| RPS inicial | 100 |
+| Incremento por estágio | 200 |
+| RPS máximo | 5000 |
+| Duração por estágio | 30s |
+| Parar se erro > | 5% |
+| Parar se P95 > | 1000ms |
 
-**Exemplo de saída:**
-
+Saída durante o teste:
 ```
-=========================================
-   TESTE DE CARGA PROGRESSIVO
-   Descobrindo o limite da aplicação
-=========================================
+Teste progressivo — order-service
+Estágios: 100 → 5000 RPS (+200 por estágio, 30s cada)
+Parar se: erro > 5%  ou  P95 > 1000ms
 
-📊 Configuração do Teste
-=========================================
-⏱️  Duração por estágio: 15s
-📈 RPS inicial: 50
-📈 RPS máximo: 2000
-📊 Incremento: 100 RPS por estágio
-=========================================
+[Estágio 1]  100 RPS ... total: 2847  erros: 5.1%  P95: 48ms   OK
+[Estágio 2]  300 RPS ... total: 8640  erros: 4.9%  P95: 61ms   OK
+[Estágio 3]  500 RPS ... total: 14203 erros: 5.2%  P95: 89ms   OK
+[Estágio 4]  700 RPS ... total: 18901 erros: 8.1%  P95: 1240ms ← limite atingido
 
-🚀 Iniciando teste de carga progressivo...
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Estágio 1: Testando com 50 RPS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⏳ Aguardando 15 segundos... 
-
-📊 Coletando métricas do estágio atual:
-   📊 RPS: 50
-   📈 Total: 750 | Erros: 0 | Taxa: 0%
-   ⏱️  Latência média: 0.023s | P95: ~34ms
-   💻 CPU: 0.092% | Memória: 89.2MB
-✅ Estágio 1 concluído com sucesso!
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Estágio 2: Testando com 150 RPS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-...
+─────────────────────────────────────
+Pico sustentado:  500 RPS
+Parou por:        erro 8.1% > 5%
+Resultados:       progressive-20250101-120000.csv
+─────────────────────────────────────
 ```
 
-**Resultados:**
+O CSV gerado contém `rps, total, errors, error_pct, p95_ms` por estágio, útil para análise de degradação ou comparação entre deploys.
 
-O teste gera um arquivo load-test-results-YYYYMMDD-HHMMSS.csv com:
+---
 
-* timestamp
-* rps testado
-* total de requisições
-* erros
-* taxa de erro
-* latência média e P95
-* CPU e memória
+## Queries úteis no Grafana
 
-## Teste de Estresse
+```promql
+# Tráfego
+sum(rate(http_requests_total[1m]))
 
-Este teste aplica carga máxima por um período prolongado para verificar a estabilidade do sistema.
+# Taxa de erro
+rate(http_requests_total{status="error"}[1m]) / sum(rate(http_requests_total[1m])) * 100
 
-**Como executar:**
+# Latência P95
+histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
 
-```
-# Dar permissão de execução
-chmod +x stress-test.sh
-
-# Executar o teste (cuidado! pode sobrecarregar o sistema)
-./stress-test.sh
-```
-
-**Configurações padrão:**
-
-* RPS máximo: 5000
-* Duração: 30 segundos
-* Workers concorrentes: 50
-
-**Exemplo de saída:**
-
-```
-=========================================
-   TESTE DE ESTRESSE - LIMITE MÁXIMO
-=========================================
-
-🚨 ATENÇÃO: Este teste pode sobrecarregar o sistema!
-⏱️  Duração: 30s
-📈 RPS máximo: 5000
-🔄 Workers: 50
-
-Deseja continuar? (s/n): s
-
-🚀 Iniciando teste de estresse...
-
-⏳ Teste em andamento... 30 segundos restantes
-⏳ Teste em andamento... 15 segundos restantes
-⏳ Teste em andamento... 0 segundos restantes
-
-✅ Teste de estresse concluído!
-
-📊 Verifique os resultados no Grafana: http://localhost:3000
+# Requisições ativas
+http_requests_active
 ```
