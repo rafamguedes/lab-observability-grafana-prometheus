@@ -24,22 +24,22 @@
       "description": "Tempo de resposta das requisições — quanto menor, melhor",
       "targets": [
         {
-          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket[5m])) by (le))",
           "legendFormat": "P50 (mediana)",
           "refId": "A"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[5m])) by (le))",
           "legendFormat": "P95",
           "refId": "B"
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket[5m])) by (le))",
           "legendFormat": "P99",
           "refId": "C"
         },
         {
-          "expr": "rate(http_request_duration_seconds_sum[5m]) / rate(http_request_duration_seconds_count[5m])",
+          "expr": "rate(http_server_requests_seconds_sum[5m]) / rate(http_server_requests_seconds_count[5m])",
           "legendFormat": "Média",
           "refId": "D"
         }
@@ -95,17 +95,17 @@
       "description": "Volume de requisições por segundo",
       "targets": [
         {
-          "expr": "sum(rate(http_requests_total[1m]))",
+          "expr": "sum(rate(http_server_requests_seconds_count{uri='/api/orders'}[1m]))",
           "legendFormat": "Total req/s",
           "refId": "A"
         },
         {
-          "expr": "sum(rate(http_requests_total{status=\"success\"}[1m]))",
+          "expr": "sum(rate(http_server_requests_seconds_count{uri='/api/orders', outcome='SUCCESS'}[1m]))",
           "legendFormat": "Sucesso",
           "refId": "B"
         },
         {
-          "expr": "sum(rate(http_requests_total{status=\"error\"}[1m]))",
+          "expr": "sum(rate(http_server_requests_seconds_count{uri='/api/orders', outcome=~'CLIENT_ERROR|SERVER_ERROR'}[1m]))",
           "legendFormat": "Erro",
           "refId": "C"
         }
@@ -130,9 +130,9 @@
       "description": "Percentual de requisições com erro",
       "targets": [
         {
-          "expr": "label_replace((sum(rate(http_requests_total{status=\"error\"}[1m])) or vector(0)) / sum(rate(http_requests_total[1m])) * 100, \"serie\", \"Taxa de erro\", \"\", \"\")",
-          "refId": "A",
-          "legendFormat": "{{serie}}"
+          "expr": "label_replace(sum(rate(http_server_requests_seconds_count{uri=\"/api/orders\", outcome=~\"CLIENT_ERROR|SERVER_ERROR\"}[1m])) / sum(rate(http_server_requests_seconds_count{uri=\"/api/orders\"}[1m])) * 100 or vector(0), \"serie\", \"Taxa de erro\", \"\", \"\")",
+          "legendFormat": "{{serie}}",
+          "refId": "A"
         }
       ],
       "fieldConfig": {
@@ -289,14 +289,9 @@
           "refId": "A"
         },
         {
-          "expr": "http_requests_active",
-          "legendFormat": "Requisições ativas",
-          "refId": "B"
-        },
-        {
           "expr": "jvm_threads_live_threads",
           "legendFormat": "Threads ativas",
-          "refId": "C"
+          "refId": "B"
         }
       ],
       "fieldConfig": {
@@ -319,17 +314,17 @@
       "description": "Status atual do sistema",
       "targets": [
         {
-          "expr": "label_replace((sum(rate(http_requests_total{status=\"error\"}[1m])) or vector(0)) / sum(rate(http_requests_total[1m])) * 100, \"serie\", \"Taxa de erro\", \"\", \"\")",
+          "expr": "label_replace(sum(rate(http_server_requests_seconds_count{uri=\"/api/orders\", outcome=~\"CLIENT_ERROR|SERVER_ERROR\"}[1m])) / sum(rate(http_server_requests_seconds_count{uri=\"/api/orders\"}[1m])) * 100 or vector(0), \"serie\", \"Taxa de erro\", \"\", \"\")",
           "legendFormat": "{{serie}}",
           "refId": "A"
         },
         {
-          "expr": "sum(rate(http_requests_total[1m]))",
+          "expr": "sum(rate(http_server_requests_seconds_count{uri='/api/orders'}[1m]))",
           "legendFormat": "Tráfego (req/s)",
           "refId": "B"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{uri='/api/orders'}[5m])) by (le))",
           "legendFormat": "Latência P95 (s)",
           "refId": "C"
         },
