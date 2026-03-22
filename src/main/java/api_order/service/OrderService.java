@@ -46,19 +46,7 @@ public class OrderService {
     OrderEntity savedOrder = orderRepository.save(order);
     log.info("Order created successfully with ID: {}", savedOrder.getId());
 
-    return OrderResponse.builder()
-        .id(savedOrder.getId())
-        .orderNumber(savedOrder.getOrderNumber())
-        .supplierId(savedOrder.getSupplierId())
-        .productId(savedOrder.getProductId())
-        .quantity(savedOrder.getQuantity())
-        .unitPrice(savedOrder.getUnitPrice())
-        .totalAmount(savedOrder.getTotalAmount())
-        .status(savedOrder.getStatus())
-        .notes(savedOrder.getNotes())
-        .createdAt(savedOrder.getCreatedAt())
-        .updatedAt(savedOrder.getUpdatedAt())
-        .build();
+    return toResponse(savedOrder);
   }
 
   @Observed(name = "order.get", contextualName = "getting-order")
@@ -75,18 +63,22 @@ public class OrderService {
                   return new RuntimeException("Order not found");
                 });
 
+    return toResponse(order);
+  }
+
+  private static OrderResponse toResponse(OrderEntity savedOrder) {
     return OrderResponse.builder()
-        .id(order.getId())
-        .orderNumber(order.getOrderNumber())
-        .supplierId(order.getSupplierId())
-        .productId(order.getProductId())
-        .quantity(order.getQuantity())
-        .unitPrice(order.getUnitPrice())
-        .totalAmount(order.getTotalAmount())
-        .status(order.getStatus())
-        .notes(order.getNotes())
-        .createdAt(order.getCreatedAt())
-        .updatedAt(order.getUpdatedAt())
+        .id(savedOrder.getId())
+        .orderNumber(savedOrder.getOrderNumber())
+        .supplierId(savedOrder.getSupplierId())
+        .productId(savedOrder.getProductId())
+        .quantity(savedOrder.getQuantity())
+        .unitPrice(savedOrder.getUnitPrice())
+        .totalAmount(savedOrder.getTotalAmount())
+        .status(savedOrder.getStatus())
+        .notes(savedOrder.getNotes())
+        .createdAt(savedOrder.getCreatedAt())
+        .updatedAt(savedOrder.getUpdatedAt())
         .build();
   }
 }
