@@ -20,7 +20,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
 @RequestMapping("/api/orders")
-@RequiredArgsConstructor
 @Slf4j
 public class OrderController {
 
